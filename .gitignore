@@ -1,0 +1,15 @@
+# Ignore C++ object files
+*.o
+*.obj
+
+# Ignore binaries (executables)
+*.exe
+*.out
+*.a
+*.so
+*.dll
+
+# Ignore build directories (optional)
+/build/
+/bin/
+/dist/
