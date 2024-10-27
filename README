@@ -1,1 +1,13 @@
-brew install websocketpp
+to run:
+
+- have homebrew and clang installed
+- run "brew install websocketpp"
+- run "g++ -std=c++17 -I/opt/homebrew/opt/websocketpp/include \    -I/opt/homebrew/opt/boost/include -I/opt/homebrew/opt/openssl@3/include \
+    -L/opt/homebrew/opt/boost/lib -L/opt/homebrew/opt/openssl@3/lib \
+    -o eth_mempool_monitor eth_mempool_monitor.cpp \
+    -lboost_system -lssl -lcrypto" or something similar.
+
+-run  ./eth_mempool_monitor <WEBSOCKET LINK>
+
+you should see pending ethereum transactions print out 
+
