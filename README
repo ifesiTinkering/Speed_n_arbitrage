@@ -11,3 +11,14 @@ to run:
 
 you should see pending ethereum transactions print out 
 
+
+
+Or using Makefile
+
+Compile:
+    make
+Run (replace <WEBSOCKET LINK> with your actual link):
+    make run WS_LINK=wss://<WEBSOCKET LINK>
+Clean:
+    make clean
+
