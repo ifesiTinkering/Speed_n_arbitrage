@@ -2,23 +2,14 @@ to run:
 
 - have homebrew and clang installed
 - run "brew install websocketpp"
-- run "g++ -std=c++17 -I/opt/homebrew/opt/websocketpp/include \    -I/opt/homebrew/opt/boost/include -I/opt/homebrew/opt/openssl@3/include \
-    -L/opt/homebrew/opt/boost/lib -L/opt/homebrew/opt/openssl@3/lib \
-    -o eth_mempool_monitor eth_mempool_monitor.cpp \
-    -lboost_system -lssl -lcrypto" or something similar.
+- run "g++ -std=c++17 -I/opt/homebrew/opt/websocketpp/include \
+    -I/opt/homebrew/opt/boost/include -I/opt/homebrew/opt/openssl@3/include \
+    -I/opt/homebrew/opt/jsoncpp/include -L/opt/homebrew/opt/boost/lib \
+    -L/opt/homebrew/opt/openssl@3/lib -L/opt/homebrew/opt/jsoncpp/lib \
+    -o eth_mempool_monitor eth_mempool_monitor.cpp -lboost_system -lssl -lcrypto -ljsoncpp -lcurl
+" or something similar (depending on where your dependencies are installed)
 
--run  ./eth_mempool_monitor <WEBSOCKET LINK>
+-run  ./eth_mempool_monitor <HTTPS QUICKNOE ENDPOINT>
 
 you should see pending ethereum transactions print out 
-
-
-
-Or using Makefile
-
-Compile:
-    make
-Run (replace <WEBSOCKET LINK> with your actual link):
-    make run WS_LINK=wss://<WEBSOCKET LINK>
-Clean:
-    make clean
 
