@@ -9,6 +9,8 @@
 #include <chrono>
 #include <memory>
 
+#include <vector>
+
 typedef websocketpp::client<websocketpp::config::asio_tls_client> client;
 
 std::string ethereum_node_url; // Will be initialized in main()
@@ -38,6 +40,18 @@ std::string get_transaction_details(const std::string& tx_hash) {
     return result;
 }
 
+// retrurns true if the specified address a valid address, specified by the vector valid_addresses with a default
+// value of a vector (of size 1) with the universal uniswap address; essentially filters TO addresses
+bool isValidToAddress(std::string address, const std::vector<std::string>& valid_addresses = {"0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad"})
+{
+    for (std::string valid_address : valid_addresses)
+    {
+        if (address == valid_address)
+            return true;
+    }
+    return false;
+}
+
 // Function to parse and print transaction details from JSON response
 void print_transaction_details(const std::string& json_response) {
     Json::Value root;
@@ -48,17 +62,47 @@ void print_transaction_details(const std::string& json_response) {
     if (Json::parseFromStream(reader, s, &root, &errs)) {
         auto result = root["result"];
         if (!result.isNull()) {
+            std::string id = root["id"].asString();
+            std::string jsonrpc = root["jsonrpc"].asString();
+            std::string blockHash = result["blockHash"].asString();
+            std::string blockNumber = result["blockNumber"].asString();
+            std::string chainId = result["chainId"].asString();
             std::string from = result["from"].asString();
-            std::string to = result["to"].asString();
-            std::string value = result["value"].asString();
             std::string gas = result["gas"].asString();
             std::string gasPrice = result["gasPrice"].asString();
+            std::string hash = result["hash"].asString();
+            std::string input = result["input"].asString();
+            std::string maxFeePerGas = result["maxFeePerGas"].asString();
+            std::string maxPriorityFeePerGas = result["maxPriorityFeePerGas"].asString();
+            std::string nonce = result["nonce"].asString();
+            std::string r = result["r"].asString();
+            std::string s = result["s"].asString();
+            std::string to = result["to"].asString();
+            std::string transactionIndex = result["transactionIndex"].asString();
+            std::string type = result["type"].asString();
+            std::string v = result["v"].asString();
+            std::string value = result["value"].asString();
+            std::string yParity = result["yParity"].asString();
 
-            std::cout << "From: " << from << "\nTo: " << to 
-                      << "\nValue: " << value << "\nGas: " << gas 
-                      << "\nGas Price: " << gasPrice << "\n" << std::endl;
+            /*
+                FILTER BY UNISWAP UNIVERSAL ADDRESS(ES)
+            */
+            if (isValidToAddress(to))
+            {
+                std::cout << "id: " << id << "\njsonrpc: " << jsonrpc 
+                          << "\nblockHash: " << blockHash << "\nblockNumber: " << blockNumber 
+                          << "\nchainId: " << chainId << "\nfrom: " << from 
+                          << "\ngas: " << gas << "\ngasPrice: " << gasPrice 
+                          << "\nhash: " << hash << "\ninput: " << input 
+                          << "\nmaxFeePerGas: " << maxFeePerGas << "\nmaxPriorityFeePerGas: " << maxPriorityFeePerGas 
+                          << "\nnonce: " << nonce << "\nr: " << r 
+                          << "\ns: " << s << "\nto: " << to 
+                          << "\ntransactionIndex: " << transactionIndex << "\ntype: " << type 
+                          << "\nv: " << v << "\nvalue: " << value 
+                          << "\nyParity: " << yParity << std::endl << std::endl;
+            }
         } else {
-            std::cerr << "Transaction details not found." << std::endl;
+            //std::cerr << "Transaction details not found." << std::endl; // good for debugging purposes
         }
     } else {
         std::cerr << "Failed to parse JSON: " << errs << std::endl;
@@ -93,7 +137,7 @@ void init() {
 
         if (Json::parseFromStream(reader, s, &root, &errs)) {
             std::string tx_hash = root["params"]["result"].asString();
-            std::cout << "Pending Transaction Hash: " << tx_hash << std::endl;
+            //std::cout << "Pending Transaction Hash: " << tx_hash << std::endl; //leaving here 4 debugging later
 
             // Retrieve and print transaction details
             std::string tx_details = get_transaction_details(tx_hash);
