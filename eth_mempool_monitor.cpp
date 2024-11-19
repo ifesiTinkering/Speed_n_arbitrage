@@ -111,6 +111,9 @@ void print_transaction_details(const std::string& json_response) {
 
 // Function to initialize the WebSocket connection and handle reconnection
 void init() {
+
+    boost::asio::thread_pool thread_pool(15); // thread pool of size 15!
+
     client ws_client;
     ws_client.init_asio();
 
@@ -129,7 +132,9 @@ void init() {
         std::cout << "Subscribed to pending transactions" << std::endl;
     });
 
-    ws_client.set_message_handler([&ws_client](websocketpp::connection_hdl, client::message_ptr msg) {
+    ws_client.set_message_handler([&ws_client, &thread_pool](websocketpp::connection_hdl, client::message_ptr msg) {
+
+        boost::asio::post(thread_pool, [msg]() {
         Json::Value root;
         Json::CharReaderBuilder reader;
         std::string errs;
@@ -145,6 +150,8 @@ void init() {
         } else {
             std::cerr << "Failed to parse pending transaction JSON: " << errs << std::endl;
         }
+        });
+
     });
 
     // Error and close handlers for reconnection
