@@ -13,3 +13,15 @@ to run:
 
 you should see pending ethereum transactions print out 
 
+
+
+ON LINUX 
+
+
+sudo apt-get update
+sudo apt-get install libssl-dev
+sudo apt-get install libjsoncpp-devy
+sudo apt-get install libcurl4-openssl-dev
+sudo apt-get install libwebsocketpp-dev
+g++ -std=c++17 -o pending_tx full_node_monitor_mempool.cpp -lboost_system -lpthread -lcurl -ljsoncpp -lssl -lcrypto
+
