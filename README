@@ -25,7 +25,7 @@ sudo apt-get install libcurl4-openssl-dev
 sudo apt-get install libwebsocketpp-dev
 
 g++ -std=c++17 -o pending_tx full_node_monitor_mempool.cpp -lboost_system -lpthread -lcurl -ljsoncpp -lssl -lcrypto
-
+./pending_tx ADDRESS
 
 for sending eth:
 
@@ -34,4 +34,4 @@ run this in geth ge:
 > personal.importRawKey("YOUR_PRIVATE_KEY", "YOUR_PASSWORD")
 "0xYourAccountAddress"
 
-personal.unlockAccount("0xYourAccountAddress", "YOUR_PASSWORD", 3600) // Unlock for 1 hour
+give python script private key
