@@ -7,7 +7,7 @@
 #include <curl/curl.h>
 #include <thread>
 #include <chrono>
-
+std::string filter_address; // Wallet address to filter transactions
 typedef websocketpp::client<websocketpp::config::asio_client> client; // Non-TLS WebSocket client
 
 std::string ethereum_node_url = "ws://localhost:8546"; // Local Geth WebSocket URL
@@ -49,6 +49,9 @@ void print_transaction_details(const std::string& json_response) {
         auto result = root["result"];
         if (!result.isNull()) {
             std::string from = result["from"].asString();
+            
+            
+
             std::string to = result["to"].isNull() ? "Contract Creation" : result["to"].asString();
             std::string value = result["value"].asString();
             std::string gas = result["gas"].asString();
@@ -58,6 +61,9 @@ void print_transaction_details(const std::string& json_response) {
             std::cout << "From: " << from << "\nTo: " << to 
                       << "\nValue: " << value << "\nGas: " << gas 
                       << "\nGas Price: " << gasPrice << "\n" << std::endl;
+
+
+
         } else {
             std::cerr << "Transaction details not found." << std::endl;
         }
@@ -120,7 +126,16 @@ void init() {
     ws_client.run();
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <Wallet Address>" << std::endl;
+        return 1;
+    }
+
+    // Get the wallet address from command-line arguments
+    filter_address = argv[1];
+    std::cout << "Filtering transactions from wallet: " << filter_address << std::endl;
+
     init();
     return 0;
 }
