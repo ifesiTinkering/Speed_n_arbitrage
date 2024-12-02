@@ -13,3 +13,4 @@
 /build/
 /bin/
 /dist/
+secrets.py
