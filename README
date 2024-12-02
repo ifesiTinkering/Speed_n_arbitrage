@@ -11,3 +11,7 @@ to run:
 
 you should see pending ethereum transactions print out 
 
+
+To send eth:
+make
+./sent_eth <maxFeePerGas (Gwei)> <maxPriorityFeePerGas (Gwei)> <gas>
