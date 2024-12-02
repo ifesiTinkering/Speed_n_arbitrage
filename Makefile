@@ -10,24 +10,19 @@ CXXFLAGS = -std=c++17 -I/opt/homebrew/opt/websocketpp/include \
 LDFLAGS = -L/opt/homebrew/opt/boost/lib -L/opt/homebrew/opt/openssl@3/lib -L/opt/homebrew/opt/jsoncpp/lib \
           -lboost_system -lssl -lcrypto -ljsoncpp -lcurl
 
-# Target executable name
-TARGET = eth_mempool_monitor
+# Target executable
+TARGET = send_eth
 
-# Source files
-SRC = eth_mempool_monitor.cpp
+# Source file
+SRC = send_eth.cpp
 
-# Default target to build the executable
+# Default target
 all: $(TARGET)
 
 # Rule to build the executable
 $(TARGET): $(SRC)
 	$(CXX) $(CXXFLAGS) $(SRC) -o $(TARGET) $(LDFLAGS)
 
-# Clean target to remove the executable and any other generated files
+# Clean target
 clean:
 	rm -f $(TARGET)
-
-# Run target to execute the program with the provided WebSocket link
-# Usage: make run WS_LINK=wss://example.websocket.link
-run: $(TARGET)
-	./$(TARGET) $(WS_LINK)
