@@ -11,9 +11,13 @@
 
 #include <vector>
 
+#include <ctype.h> // used to make FROM filtered address all lowercase
+#include <stdio.h> // used to make FROM filtered address all lowercase
+
 typedef websocketpp::client<websocketpp::config::asio_tls_client> client;
 
 std::string ethereum_node_url; // Will be initialized in main()
+std::string from_address_filter = ""; // Will be initialized in main()
 
 // Helper function to make an HTTP POST request to get transaction details by hash
 std::string get_transaction_details(const std::string& tx_hash) {
@@ -40,18 +44,6 @@ std::string get_transaction_details(const std::string& tx_hash) {
     return result;
 }
 
-// retrurns true if the specified address a valid address, specified by the vector valid_addresses with a default
-// value of a vector (of size 1) with the universal uniswap address; essentially filters TO addresses
-bool isValidToAddress(std::string address, const std::vector<std::string>& valid_addresses = {"0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad"})
-{
-    for (std::string valid_address : valid_addresses)
-    {
-        if (address == valid_address)
-            return true;
-    }
-    return false;
-}
-
 // Function to parse and print transaction details from JSON response
 void print_transaction_details(const std::string& json_response) {
     Json::Value root;
@@ -62,50 +54,40 @@ void print_transaction_details(const std::string& json_response) {
     if (Json::parseFromStream(reader, s, &root, &errs)) {
         auto result = root["result"];
         if (!result.isNull()) {
-            std::string id = root["id"].asString();
-            std::string jsonrpc = root["jsonrpc"].asString();
-            std::string blockHash = result["blockHash"].asString();
-            std::string blockNumber = result["blockNumber"].asString();
-            std::string chainId = result["chainId"].asString();
+            std::stringstream ss; // used to convert string hex to integer
+            
             std::string from = result["from"].asString();
-            std::string gas = result["gas"].asString();
-            std::string gasPrice = result["gasPrice"].asString();
-            std::string hash = result["hash"].asString();
-            std::string input = result["input"].asString();
-            std::string maxFeePerGas = result["maxFeePerGas"].asString();
-            std::string maxPriorityFeePerGas = result["maxPriorityFeePerGas"].asString();
-            std::string nonce = result["nonce"].asString();
-            std::string r = result["r"].asString();
-            std::string s = result["s"].asString();
-            std::string to = result["to"].asString();
-            std::string transactionIndex = result["transactionIndex"].asString();
-            std::string type = result["type"].asString();
-            std::string v = result["v"].asString();
-            std::string value = result["value"].asString();
-            std::string yParity = result["yParity"].asString();
-
-            /*
-                FILTER BY UNISWAP UNIVERSAL ADDRESS(ES)
-            */
-            if (isValidToAddress(to))
+            //std::cout << result["from"].asString() << std::endl;
+            //std::cout << from_address_filter << std::endl << std::endl;
+            if (from == from_address_filter)
             {
-                std::cout << "id: " << id << "\njsonrpc: " << jsonrpc 
-                          << "\nblockHash: " << blockHash << "\nblockNumber: " << blockNumber 
-                          << "\nchainId: " << chainId << "\nfrom: " << from 
-                          << "\ngas: " << gas << "\ngasPrice: " << gasPrice 
-                          << "\nhash: " << hash << "\ninput: " << input 
-                          << "\nmaxFeePerGas: " << maxFeePerGas << "\nmaxPriorityFeePerGas: " << maxPriorityFeePerGas 
-                          << "\nnonce: " << nonce << "\nr: " << r 
-                          << "\ns: " << s << "\nto: " << to 
-                          << "\ntransactionIndex: " << transactionIndex << "\ntype: " << type 
-                          << "\nv: " << v << "\nvalue: " << value 
-                          << "\nyParity: " << yParity << std::endl << std::endl;
+                std::string to = result["to"].asString();
+
+                ss << std::hex << result["gas"].asString();
+                long long gas;
+                ss >> gas;
+                ss.clear();
+
+                ss << std::hex << result["gasPrice"].asString();
+                long long gasPrice;
+                ss >> gasPrice;
+                ss.clear();
+
+                ss << std::hex << result["value"].asString();
+                long long value;
+                ss >> value;
+
+                std::cout << "--------------------------" << std::endl;
+                std::cout << "From: " << from << "\nTo: " << to 
+                << "\nValue: " << result["value"].asString() << " (" << value  << ") "<< "\nGas: " << result["gas"].asString() 
+                << " (" << gas << ") "
+                << "\nGas Price: " << result["gasPrice"].asString() << " (" << gasPrice << ") " << "\n" << std::endl;
             }
         } else {
             //std::cerr << "Transaction details not found." << std::endl; // good for debugging purposes
         }
     } else {
-        std::cerr << "Failed to parse JSON: " << errs << std::endl;
+        //std::cerr << "Failed to parse JSON: " << errs << std::endl;
     }
 }
 
@@ -148,7 +130,7 @@ void init() {
             std::string tx_details = get_transaction_details(tx_hash);
             print_transaction_details(tx_details);
         } else {
-            std::cerr << "Failed to parse pending transaction JSON: " << errs << std::endl;
+            //std::cerr << "Failed to parse pending transaction JSON: " << errs << std::endl;
         }
         });
 
@@ -180,12 +162,21 @@ void init() {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <Ethereum Node URL>" << std::endl;
+    if (argc != 3) {
+        std::cerr << "Usage: " << argv[0] << " <Ethereum Node URL>" << " <To Address>" << std::endl;
         return 1;
     }
-
+    
     ethereum_node_url = argv[1]; // Set the URL from the command line argument
+    from_address_filter = argv[2];
+
+    // convert address filter to a lowercase string
+    std::string temp = "";
+    for (char c : from_address_filter)
+        temp += (char) tolower(c);
+    from_address_filter = temp;
+
+
     init();
     return 0;
 }
