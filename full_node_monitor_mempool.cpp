@@ -1,10 +1,11 @@
- #include <iostream>
+#include <iostream>
 #include <string>
 #include <curl/curl.h>
 #include <jsoncpp/json/json.h>
 #include <thread>
 #include <chrono>
-
+int count=0;
+int target=2;
 // Geth node URL
 std::string ethereum_node_url = "http://localhost:8545";
 
@@ -53,9 +54,15 @@ bool find_and_print_uniswap_transaction() {
                 for (const auto& nonce : senderTxs.getMemberNames()) {
                     const Json::Value& tx = senderTxs[nonce];
                     if (tx.isMember("to") && tx["to"].asString() == uniswap_router_address) {
+                        count+=1;
+                       
+
                         std::cout << "Transaction found to Uniswap Universal Router!" << std::endl;
                         std::cout << "Hash: " << tx["hash"].asString() << std::endl;
-                        return true; // Exit once a transaction is found
+                        //return true; // Exit once a transaction is found
+                         if (count==target){
+                            return true;
+                        }
                     }
                 }
             }
@@ -81,4 +88,5 @@ int main() {
 
     std::cout << "Transaction found, exiting." << std::endl;
     return 0;
+
 }
