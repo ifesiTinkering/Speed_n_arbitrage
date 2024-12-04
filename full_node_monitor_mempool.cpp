@@ -1,4 +1,4 @@
-#include <iostream>
+ #include <iostream>
 #include <string>
 #include <curl/curl.h>
 #include <jsoncpp/json/json.h>
@@ -7,6 +7,9 @@
 
 // Geth node URL
 std::string ethereum_node_url = "http://localhost:8545";
+
+// Uniswap Universal Router address
+std::string uniswap_router_address = "0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad";
 
 // Helper function to make an HTTP POST request to query txpool_content
 std::string get_txpool_content() {
@@ -33,8 +36,8 @@ std::string get_txpool_content() {
     return result;
 }
 
-// Function to filter transactions from a specific address
-bool find_pending_transaction(const std::string& address) {
+// Function to continuously check for transactions targeting the Uniswap Universal Router
+bool find_and_print_uniswap_transaction() {
     std::string response = get_txpool_content();
     Json::Value root;
     Json::CharReaderBuilder reader;
@@ -43,43 +46,39 @@ bool find_pending_transaction(const std::string& address) {
     std::istringstream s(response);
     if (Json::parseFromStream(reader, s, &root, &errs)) {
         Json::Value pending = root["result"]["pending"];
-        if (pending.isObject() && pending.isMember(address)) {
-            // Iterate over pending transactions for the given address
-            for (const auto& nonce : pending[address].getMemberNames()) {
-                const Json::Value& tx = pending[address][nonce];
-                std::cout << "Transaction found!" << std::endl;
-                std::cout << "Nonce: " << nonce << std::endl;
-                std::cout << "To: " << tx["to"].asString() << std::endl;
-                std::cout << "Value: " << tx["value"].asString() << std::endl;
-                std::cout << "Gas: " << tx["gas"].asString() << std::endl;
-                std::cout << "Gas Price: " << tx["gasPrice"].asString() << std::endl;
-                std::cout << "Hash: " << tx["hash"].asString() << std::endl;
-                std::cout << "--------------------------" << std::endl;
-                return true; // Stop after finding the first transaction
+        if (pending.isObject()) {
+            // Iterate through all addresses in the pending transactions
+            for (const auto& sender : pending.getMemberNames()) {
+                const Json::Value& senderTxs = pending[sender];
+                for (const auto& nonce : senderTxs.getMemberNames()) {
+                    const Json::Value& tx = senderTxs[nonce];
+                    if (tx.isMember("to") && tx["to"].asString() == uniswap_router_address) {
+                        std::cout << "Transaction found to Uniswap Universal Router!" << std::endl;
+                        std::cout << "Hash: " << tx["hash"].asString() << std::endl;
+                        return true; // Exit once a transaction is found
+                    }
+                }
             }
+        } else {
+            std::cout << "No pending transactions found in txpool." << std::endl;
         }
     } else {
         std::cerr << "Failed to parse JSON: " << errs << std::endl;
     }
-    return false; // No transaction found for the address
+    return false; // No matching transaction found
 }
 
-int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <Wallet Address>" << std::endl;
-        return 1;
-    }
-
-    std::string filter_address = argv[1];
-    std::cout << "Monitoring mempool for transactions from: " << filter_address << std::endl;
+int main() {
+    std::cout << "Monitoring mempool for transactions to Uniswap Universal Router..." << std::endl;
 
     while (true) {
-        if (find_pending_transaction(filter_address)) {
-            break; // Exit once a transaction is found
+        if (find_and_print_uniswap_transaction()) {
+            break; // Stop looking once a transaction is found
         }
-        std::cout << "Waiting for a transaction..." << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(5)); // Poll every 5 seconds
+        std::cout << "No transaction found, retrying..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2)); // Poll every 2 seconds
     }
 
+    std::cout << "Transaction found, exiting." << std::endl;
     return 0;
 }
