@@ -4,8 +4,10 @@
 #include <jsoncpp/json/json.h>
 #include <thread>
 #include <chrono>
-int count=0;
-int target=2;
+
+int count = 0;
+int target = 2;
+
 // Geth node URL
 std::string ethereum_node_url = "http://localhost:8545";
 
@@ -54,13 +56,12 @@ bool find_and_print_uniswap_transaction() {
                 for (const auto& nonce : senderTxs.getMemberNames()) {
                     const Json::Value& tx = senderTxs[nonce];
                     if (tx.isMember("to") && tx["to"].asString() == uniswap_router_address) {
-                        count+=1;
-                       
+                        count += 1;
 
                         std::cout << "Transaction found to Uniswap Universal Router!" << std::endl;
                         std::cout << "Hash: " << tx["hash"].asString() << std::endl;
-                        //return true; // Exit once a transaction is found
-                         if (count==target){
+
+                        if (count == target) {
                             return true;
                         }
                     }
@@ -78,15 +79,24 @@ bool find_and_print_uniswap_transaction() {
 int main() {
     std::cout << "Monitoring mempool for transactions to Uniswap Universal Router..." << std::endl;
 
+    // Record the start time
+    auto start_time = std::chrono::high_resolution_clock::now();
+
     while (true) {
         if (find_and_print_uniswap_transaction()) {
-            break; // Stop looking once a transaction is found
+            break; // Stop looking once the target number of transactions is found
         }
         std::cout << "No transaction found, retrying..." << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(2)); // Poll every 2 seconds
     }
 
+    // Record the end time
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+
+    // Print the elapsed time
+    std::cout << "Time taken to find " << target << " transactions: " << duration << " nanoseconds." << std::endl;
+
     std::cout << "Transaction found, exiting." << std::endl;
     return 0;
-
 }
