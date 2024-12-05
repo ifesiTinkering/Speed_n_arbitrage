@@ -54,18 +54,12 @@ bool is_transaction_to_uniswap(const std::string& json_response, int &transactio
         if (!result.isNull()) {
             std::stringstream ss; // used to convert string hex to integer
             std::string to = result["to"].asString();
-            //std::cout << result["from"].asString() << std::endl;
-            //std::cout << from_address_filter << std::endl << std::endl;
             if (to == UNISWAP_MEMPOOL_ADDRESS)
             {
                 transactions_printed++;
                 return true;
             }
-        } else {
-            //std::cerr << "Transaction details not found." << std::endl; // good for debugging purposes
         }
-    } else {
-        //std::cerr << "Failed to parse JSON: " << errs << std::endl;
     }
     return false;
 }
@@ -182,7 +176,6 @@ void serial_init(int count, std::vector<std::string> &transaction_hashes, int &t
 
             if (Json::parseFromStream(reader, s, &root, &errs)) {
                 std::string tx_hash = root["params"]["result"].asString();
-                //std::cout << "Pending Transaction Hash: " << tx_hash << std::endl; //leaving here 4 debugging later
 
                 // Retrieve and print transaction details
                 std::string tx_details = get_transaction_details(tx_hash, endpoint_url);
@@ -192,8 +185,6 @@ void serial_init(int count, std::vector<std::string> &transaction_hashes, int &t
                     transaction_hashes.push_back(tx_hash);
                 }
 
-            } else {
-                //std::cerr << "Failed to parse pending transaction JSON: " << errs << std::endl;
             }
         }
         else {
@@ -235,7 +226,6 @@ long long serial_mempool_monitor(int count, std::string endpoint_url) // return 
     serial_init(count, transaction_hashes, hashes_found, endpoint_url);
     auto t1 = std::chrono::system_clock::now();
     return std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count();
-    //return transaction_hashes;
 }
 
 
@@ -247,7 +237,6 @@ long long parallel_mempool_monitor(int count, std::string endpoint_url)
     parallel_init(count, transaction_hashes, hashes_found, endpoint_url);
     auto t1 = std::chrono::system_clock::now();
     return std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count();
-    //return transaction_hashes;
 }
 
 int main(int argc, char* argv[]) {
