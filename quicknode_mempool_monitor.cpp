@@ -77,6 +77,8 @@ void parallel_init(int count, std::vector<std::string> &transaction_hashes, int 
 
     client ws_client;
     ws_client.init_asio();
+    ws_client.clear_access_channels(websocketpp::log::alevel::all);
+
 
     ws_client.set_tls_init_handler([](websocketpp::connection_hdl) {
         auto ctx = std::make_shared<websocketpp::lib::asio::ssl::context>(websocketpp::lib::asio::ssl::context::tlsv12);
@@ -105,12 +107,12 @@ void parallel_init(int count, std::vector<std::string> &transaction_hashes, int 
                 if (Json::parseFromStream(reader, s, &root, &errs)) {
                     std::string tx_hash = root["params"]["result"].asString();
                     //std::cout << "Pending Transaction Hash: " << tx_hash << std::endl; //leaving here 4 debugging later
-
                     // Retrieve and print transaction details
                     std::string tx_details = get_transaction_details(tx_hash, endpoint_url);
                     if (is_transaction_to_uniswap(tx_details, transactions_printed) & (transaction_hashes.size() <= count) )
                     {
                         transaction_hashes.push_back(tx_hash);
+                        std::cout << tx_hash << " (" << transactions_printed << ") " << std::endl;
                     }
 
                 } else {
@@ -126,14 +128,14 @@ void parallel_init(int count, std::vector<std::string> &transaction_hashes, int 
 
     // Error and close handlers for reconnection
     ws_client.set_fail_handler([&ws_client, &count, &transaction_hashes, &transactions_printed, &endpoint_url](websocketpp::connection_hdl) {
-        std::cerr << "Unable to connect, retrying in 3 seconds..." << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(3));
+        std::cerr << "Unable to connect, retrying in 100 ms..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         parallel_init(count, transaction_hashes, transactions_printed, endpoint_url);
     });
 
     ws_client.set_close_handler([&ws_client, &count, &transaction_hashes, &transactions_printed, &endpoint_url](websocketpp::connection_hdl) {
-        std::cerr << "Connection closed! Attempting to reconnect in 3 seconds..." << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(3));
+        std::cerr << "Connection closed! Attempting to reconnect in 100 ms..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         parallel_init(count, transaction_hashes, transactions_printed, endpoint_url);
     });
 
@@ -153,6 +155,7 @@ void parallel_init(int count, std::vector<std::string> &transaction_hashes, int 
 void serial_init(int count, std::vector<std::string> &transaction_hashes, int &transactions_printed, std::string &endpoint_url) {
     client ws_client;
     ws_client.init_asio();
+    ws_client.clear_access_channels(websocketpp::log::alevel::all);
 
     ws_client.set_tls_init_handler([](websocketpp::connection_hdl) {
         auto ctx = std::make_shared<websocketpp::lib::asio::ssl::context>(websocketpp::lib::asio::ssl::context::tlsv12);
@@ -185,6 +188,7 @@ void serial_init(int count, std::vector<std::string> &transaction_hashes, int &t
                 std::string tx_details = get_transaction_details(tx_hash, endpoint_url);
                 if (is_transaction_to_uniswap(tx_details, transactions_printed) & (transaction_hashes.size() <= count) )
                 {
+                    std::cout << tx_hash << " (" << transactions_printed << ") " << std::endl;
                     transaction_hashes.push_back(tx_hash);
                 }
 
@@ -200,14 +204,14 @@ void serial_init(int count, std::vector<std::string> &transaction_hashes, int &t
 
     // Error and close handlers for reconnection
     ws_client.set_fail_handler([&ws_client, &count, &transaction_hashes, &transactions_printed, &endpoint_url](websocketpp::connection_hdl) {
-        std::cerr << "Unable to connect, retrying in 3 seconds..." << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(3));
+        std::cerr << "Unable to connect, retrying in 100 ms..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         serial_init(count, transaction_hashes, transactions_printed, endpoint_url);
     });
 
     ws_client.set_close_handler([&ws_client, &count, &transaction_hashes, &transactions_printed, &endpoint_url](websocketpp::connection_hdl) {
-        std::cerr << "Connection closed! Attempting to reconnect in 3 seconds..." << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(3));
+        std::cerr << "Connection closed! Attempting to reconnect in 100 ms..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         serial_init(count, transaction_hashes, transactions_printed, endpoint_url);
     });
 
@@ -247,37 +251,26 @@ long long parallel_mempool_monitor(int count, std::string endpoint_url)
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 4) {
-        std::cerr << "Usage: " << argv[0] << " <Ethereum Node URL 1>" << " <Ethereum Node URL 2>" 
-        << " <Transaction Count>" << std::endl;
+    if (argc != 4 || (argv[3] != std::string("p") && argv[3] != std::string("s"))) {
+        std::cerr << "Usage: " << argv[0] << " <Ethereum Node URL>" << " <count>" << " <p/s>" << std::endl;
         return 1;
     }
     
-    int transaction_count = std::stoi(argv[3]); 
+    int transaction_count = std::stoi(argv[2]); 
 
-    //std::string endpoint_url_1 = "https://wandering-chaotic-meadow.quiknode.pro/db70ddd07bd5f00cc9b937ac7015fe65c4e135e1";
-    //std::string endpoint_url_2 = "https://quick-blissful-road.quiknode.pro/233e464433e3f16b4b5200a4ba45595903d0b737";
+    std::string endpoint_url = argv[1];
+    std::string option = argv[3];
 
-    std::string endpoint_url_1 = argv[1];
-    std::string endpoint_url_2 = argv[2];
-    
-    std::promise<long long> parallel_promise, serial_promise;
-    std::future<long long> parallel_future = parallel_promise.get_future();
-    std::future<long long> serial_future = serial_promise.get_future();
-
-    std::thread parallel_thread([&parallel_promise] (int transaction_count, std::string endpoint_url) {
-        parallel_promise.set_value(parallel_mempool_monitor(transaction_count, endpoint_url));
-    }, transaction_count, endpoint_url_1);
-        
-    std::thread serial_thread([&serial_promise] (int transaction_count, std::string endpoint_url) {
-        serial_promise.set_value(serial_mempool_monitor(transaction_count, endpoint_url));
-    }, transaction_count, endpoint_url_2);
-
-    parallel_thread.join();
-    serial_thread.join();
-
-    std::cout << "PARALLEL TIME: " << parallel_future.get() << std::endl;
-    std::cout << "SERIAL   TIME: " << serial_future.get() << std::endl;
+    if (option == "p")
+    {
+        long long time_taken = parallel_mempool_monitor(transaction_count, endpoint_url);
+        std::cout << "PARALLEL TIME: " << time_taken << std::endl;
+    }
+    if (option == "s")
+    {
+        long long time_taken = serial_mempool_monitor(transaction_count, endpoint_url);
+        std::cout << "SERIAL TIME: " << time_taken << std::endl;
+    }
 
     return 0;
 }
