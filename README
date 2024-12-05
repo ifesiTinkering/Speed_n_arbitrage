@@ -35,3 +35,30 @@ run this in geth ge:
 "0xYourAccountAddress"
 
 give python script private key
+
+# to run quicknode_mempool_monitor:
+- ensure the following dependencies are installed
+	- websocketpp
+	- boost
+	- openssl@3
+	- jsoncpp
+	
+- then to compile use either of the following two options 
+	- use the make file
+	> make
+	
+	- or run "g++ -std=c++17 -I/opt/homebrew/opt/websocketpp/include \
+           -I/opt/homebrew/opt/boost/include -I/opt/homebrew/opt/openssl@3/include \
+		   -I/opt/homebrew/opt/jsoncpp/include -L/opt/homebrew/opt/boost/lib -L/opt/homebrew/opt/openssl@3/lib -L/opt/homebrew/opt/jsoncpp/lib \
+          -lboost_system -lssl -lcrypto -ljsoncpp -lcurl -o quicknode_mempool_monitor quicknode_mempool_monitor.cpp"
+	
+	- run ./quicknode_mempool_monitor <quicknode endpoint HTTPS provider> <count> <p/s>
+	
+	- EXAMPLES:
+		> ./quicknode_mempool_monitor https://mystic-rolling-forest.quiknode.pro/abc123xyz456def789ghi0123 10 p
+		- This runs (multithreaded) until 10 transactions to uniswap mempool router are detected then returns time taken.
+		
+		> ./quicknode_mempool_monitor https://mystic-rolling-forest.quiknode.pro/abc123xyz456def789ghi0123 20 s
+		- This runs (serially) until 20 transactions to uniswap mempool router are detected then returns time taken.
+	
+	This will print out <count> Ethereum transaction hashes going to uniswap mempool and will return time taken to complete.
