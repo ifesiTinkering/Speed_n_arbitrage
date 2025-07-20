@@ -1,3 +1,7 @@
+This is a comparision between the speed of Quicknode and a full ethereum node, in fetching transactions. 
+
+📄 [Read about the project in more detail in the repo doc (PDF)](./Full%20Node%20VS%20QuickNode%20Documentation%20.pdf)
+📄 [Read about the project in more detail in the presentation slides (PDF)](./Data%20Availability%20Analysis%20final%20paper.pdf)
 to run:
 
 - have homebrew and clang installed
